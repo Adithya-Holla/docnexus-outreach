@@ -1,0 +1,52 @@
+// src/app/api/campaigns/route.ts
+import { type NextRequest } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { CreateCampaignSchema } from '@/lib/validations'
+
+export async function POST(request: NextRequest) {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return Response.json({ error: 'Request body must be valid JSON' }, { status: 400 })
+  }
+
+  const parsed = CreateCampaignSchema.safeParse(body)
+  if (!parsed.success) {
+    return Response.json(
+      { error: 'Validation failed', issues: parsed.error.issues },
+      { status: 422 },
+    )
+  }
+
+  const { name, type, sequences } = parsed.data
+
+  try {
+    // Single transaction: create campaign + all sequence steps atomically.
+    // If any step insert fails, the entire campaign is rolled back.
+    const campaign = await prisma.$transaction(async (tx) => {
+      return tx.campaign.create({
+        data: {
+          name,
+          type,
+          sequences: {
+            create: sequences.map((s) => ({
+              stepNumber:      s.stepNumber,
+              delayDays:       s.delayDays,
+              subjectTemplate: s.subjectTemplate,
+              bodyTemplate:    s.bodyTemplate,
+            })),
+          },
+        },
+        include: {
+          sequences: { orderBy: { stepNumber: 'asc' } },
+        },
+      })
+    })
+
+    return Response.json({ data: campaign }, { status: 201 })
+  } catch (err) {
+    console.error('[POST /api/campaigns]', err)
+    return Response.json({ error: 'Failed to create campaign' }, { status: 500 })
+  }
+}
