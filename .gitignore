@@ -1,0 +1,44 @@
+# .gitignore
+
+# Blueprint PDF (confidential)
+DocNexus_Engineering_Blueprint.pdf
+
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Next.js build output
+/.next/
+/out/
+
+# Production build
+/build
+
+# Environment variables — never commit secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database file — contains seed data, not versioned
+prisma/dev.db
+prisma/dev.db-journal
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
