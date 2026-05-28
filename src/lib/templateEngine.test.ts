@@ -71,10 +71,7 @@ export const testCases: Array<{ name: string; run: () => void }> = [
   {
     name: 'highlightTemplateVars wraps both known and unknown tokens in <mark> tags',
     run() {
-      const input  = 'Hi {{doctor_name}}, your focus is {{specialty}}. See {{unknown}}.'
-      const output = replaceTemplateVars
-        ? highlightTemplateVars(input)
-        : ''
+      const input = 'Hi {{doctor_name}}, your focus is {{specialty}}. See {{unknown}}.'
 
       expect(highlightTemplateVars(input)).toBe(
         'Hi <mark class="template-var">{{doctor_name}}</mark>, ' +
