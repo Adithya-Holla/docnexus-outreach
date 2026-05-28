@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 export const SequenceStepSchema = z.object({
   stepNumber:      z.number().int().min(1),
-  delayDays:       z.number().int().min(0),
+  delayDays:       z.number().int('Must be a whole number').min(0, 'Delay must be 0 or more days'),
   subjectTemplate: z.string().min(1).max(500),
   bodyTemplate:    z.string().min(1).max(5000),
 })
@@ -22,5 +22,6 @@ export const LaunchCampaignSchema = z.object({
     .min(1, 'Select at least one physician'),
 })
 
-export type CreateCampaignInput = z.infer<typeof CreateCampaignSchema>
-export type LaunchCampaignInput = z.infer<typeof LaunchCampaignSchema>
+export type CreateCampaignInput  = z.infer<typeof CreateCampaignSchema>
+export type LaunchCampaignInput  = z.infer<typeof LaunchCampaignSchema>
+export type CampaignFormValues   = z.infer<typeof CreateCampaignSchema>
