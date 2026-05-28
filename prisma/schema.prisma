@@ -8,3 +8,86 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+
+/// Represents a licensed healthcare professional (HCP) in the system.
+/// Physicians are read-only seed data — created via seed script, never via UI.
+/// Indexed on all filterable fields used in the Physician Discovery module.
+model Physician {
+  id                  String   @id @default(uuid())
+  /// National Provider Identifier — 10-digit unique identifier assigned by CMS
+  npi                 String   @unique
+  firstName           String
+  lastName            String
+  specialty           String
+  subSpecialty        String?
+  affiliation         String
+  city                String
+  state               String
+  email               String   @unique
+  /// Year the physician registered their NPI — used for "years of experience" filter
+  npiRegistrationYear Int
+  acceptingPatients   Boolean  @default(true)
+  boardCertified      Boolean  @default(true)
+  createdAt           DateTime @default(now())
+
+  enrollments CampaignEnrollment[]
+
+  @@index([specialty])
+  @@index([state])
+  @@index([affiliation])
+  @@index([npiRegistrationYear])
+}
+
+/// An outreach campaign targeting a set of physicians with a multi-step email sequence.
+/// Status lifecycle: draft → active → completed
+/// type is stored as a string (SQLite has no native enum) and validated at the API layer via Zod.
+model Campaign {
+  id        String   @id @default(uuid())
+  name      String
+  /// cold_outbound | reengagement | conference_followup
+  type      String
+  /// draft | active | completed
+  status    String   @default("draft")
+  createdAt DateTime @default(now())
+  /// Auto-managed by Prisma — useful for "last updated" display in the dashboard
+  updatedAt DateTime @updatedAt
+
+  sequences   SequenceStep[]
+  enrollments CampaignEnrollment[]
+}
+
+/// A single email step within a campaign's outreach sequence.
+/// Templates use {{variable}} syntax resolved by the templateEngine at send time.
+/// Cascade delete ensures no orphaned steps when a campaign is removed.
+model SequenceStep {
+  id              String @id @default(uuid())
+  stepNumber      Int
+  /// Days after the previous step to send this email (0 = send immediately)
+  delayDays       Int    @default(0)
+  subjectTemplate String
+  bodyTemplate    String
+  campaignId      String
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+}
+
+/// Join table tracking which physicians are enrolled in which campaigns.
+/// status reflects the current outreach state for a given physician in a given campaign.
+/// The @@unique constraint prevents enrolling the same physician in a campaign twice.
+model CampaignEnrollment {
+  id          String   @id @default(uuid())
+  campaignId  String
+  physicianId String
+  /// contacted | replied | bounced
+  status      String   @default("contacted")
+  enrolledAt  DateTime @default(now())
+
+  campaign  Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  physician Physician @relation(fields: [physicianId], references: [id])
+
+  @@unique([campaignId, physicianId])
+  @@index([campaignId])
+  @@index([physicianId])
+}
