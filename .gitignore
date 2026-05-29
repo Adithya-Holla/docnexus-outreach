@@ -3,6 +3,9 @@
 # Blueprint PDF (confidential)
 DocNexus_Engineering_Blueprint.pdf
 
+# Claude session context exports
+Claude_context*.txt
+
 # Dependencies
 node_modules/
 /.pnp
