@@ -88,9 +88,10 @@ export async function POST(request: NextRequest) {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
       },
       body: JSON.stringify({
-        model:       'meta-llama/llama-3.3-70b-instruct:free',
+        model:       'openai/gpt-oss-20b:free',
         temperature: 0.7,
         max_tokens:  400,
+        tool_choice: 'none',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user',   content: buildUserPrompt(physician, campaignType, stepNumber) },
