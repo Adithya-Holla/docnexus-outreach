@@ -36,3 +36,9 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Claude / session context exports — never commit these
+Claude_context*.txt
+Current context*.txt
+*_context_save*.txt
+DocNexus_Engineering_Blueprint.pdf
