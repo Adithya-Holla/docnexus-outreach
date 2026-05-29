@@ -54,7 +54,7 @@ function ActionButtons({
 }) {
   const [loading, setLoading] = useState<string | null>(null)
 
-  async function fire(eventType: 'REPLIED' | 'BOUNCED' | 'MEETING_BOOKED') {
+  async function fire(eventType: 'REPLIED' | 'MEETING_BOOKED') {
     setLoading(eventType)
     try {
       const res  = await fetch(`/api/enrollments/${enrollmentId}/events`, {
@@ -89,15 +89,6 @@ function ActionButtons({
           className="rounded border border-amber-200 px-2 py-0.5 text-[10px] font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50"
         >
           {loading === 'MEETING_BOOKED' ? '…' : 'Book Meeting'}
-        </button>
-      )}
-      {currentStatus !== 'bounced' && rank < STATUS_RANK.replied && (
-        <button
-          onClick={() => fire('BOUNCED')}
-          disabled={!!loading}
-          className="rounded border border-red-200 px-2 py-0.5 text-[10px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
-        >
-          {loading === 'BOUNCED' ? '…' : 'Bounced'}
         </button>
       )}
     </div>
