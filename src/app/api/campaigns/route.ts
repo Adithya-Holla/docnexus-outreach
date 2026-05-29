@@ -1,7 +1,21 @@
-// src/app/api/campaigns/route.ts
 import { type NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { CreateCampaignSchema } from '@/lib/validations'
+
+export async function GET() {
+  try {
+    const campaigns = await prisma.campaign.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: { select: { enrollments: true, sequences: true } },
+      },
+    })
+    return Response.json({ data: campaigns })
+  } catch (err) {
+    console.error('[GET /api/campaigns]', err)
+    return Response.json({ error: 'Failed to fetch campaigns' }, { status: 500 })
+  }
+}
 
 export async function POST(request: NextRequest) {
   let body: unknown
@@ -22,8 +36,6 @@ export async function POST(request: NextRequest) {
   const { name, type, sequences } = parsed.data
 
   try {
-    // Single transaction: create campaign + all sequence steps atomically.
-    // If any step insert fails, the entire campaign is rolled back.
     const campaign = await prisma.$transaction(async (tx) => {
       return tx.campaign.create({
         data: {
