@@ -1,4 +1,3 @@
-// src/app/api/campaigns/[id]/route.ts
 import { type NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
@@ -28,5 +27,23 @@ export async function GET(
   } catch (err) {
     console.error('[GET /api/campaigns/:id]', err)
     return Response.json({ error: 'Failed to fetch campaign' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  const { id } = params
+  try {
+    const existing = await prisma.campaign.findUnique({ where: { id }, select: { id: true } })
+    if (!existing) return Response.json({ error: 'Campaign not found' }, { status: 404 })
+
+    // Cascade deletes sequences + enrollments via schema onDelete: Cascade
+    await prisma.campaign.delete({ where: { id } })
+    return Response.json({ ok: true })
+  } catch (err) {
+    console.error('[DELETE /api/campaigns/:id]', err)
+    return Response.json({ error: 'Failed to delete campaign' }, { status: 500 })
   }
 }

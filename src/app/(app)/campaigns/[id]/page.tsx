@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import {
-  Users, Mail, Eye, MessageSquare, CalendarCheck,
+  Users, Mail, Eye, MessageSquare, CalendarCheck, Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useRouter } from 'next/navigation'
 import { Skeleton } from '@/components/ui/skeleton'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { EnrollmentTable } from '@/components/dashboard/EnrollmentTable'
@@ -58,8 +59,10 @@ const TYPE_LABELS: Record<string, string> = {
 
 export default function CampaignDashboardPage() {
   const { id }                            = useParams<{ id: string }>()
+  const router                            = useRouter()
   const [campaign, setCampaign]           = useState<Campaign | null>(null)
   const [isLoading, setIsLoading]         = useState(true)
+  const [isDeleting, setIsDeleting]       = useState(false)
   const [error, setError]                 = useState<string | null>(null)
 
   useEffect(() => {
@@ -72,6 +75,19 @@ export default function CampaignDashboardPage() {
       .catch(() => setError('Failed to load campaign'))
       .finally(() => setIsLoading(false))
   }, [id])
+
+  async function handleDelete() {
+    if (!confirm(`Delete "${campaign?.name}"? This cannot be undone.`)) return
+    setIsDeleting(true)
+    const res = await fetch(`/api/campaigns/${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      router.push('/campaigns')
+      router.refresh()
+    } else {
+      setIsDeleting(false)
+      alert('Failed to delete campaign. Please try again.')
+    }
+  }
 
   if (isLoading) return <LoadingSkeleton />
 
@@ -103,6 +119,15 @@ export default function CampaignDashboardPage() {
             )}>
               {campaign.status}
             </span>
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              title="Delete campaign"
+              className="ml-auto flex items-center gap-1.5 rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {isDeleting ? 'Deleting…' : 'Delete'}
+            </button>
           </div>
           <p className="text-sm text-slate-400">
             {TYPE_LABELS[campaign.type] ?? campaign.type}
