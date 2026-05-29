@@ -5,8 +5,13 @@ import { getSession, COOKIE_NAME } from '@/lib/auth'
 import { CreateCampaignSchema } from '@/lib/validations'
 
 export async function GET() {
+  const token   = cookies().get(COOKIE_NAME)?.value
+  const session = token ? await getSession(token) : null
+  if (!session) return Response.json({ error: 'Unauthenticated' }, { status: 401 })
+
   try {
     const campaigns = await prisma.campaign.findMany({
+      where:   { userId: session.id },
       orderBy: { createdAt: 'desc' },
       include: {
         _count: { select: { enrollments: true, sequences: true } },

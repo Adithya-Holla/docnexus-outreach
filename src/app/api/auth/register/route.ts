@@ -16,24 +16,28 @@ export async function POST(request: NextRequest) {
 
   const { firstName, lastName, email, password, company, role, title } = parsed.data
 
-  const existing = await prisma.user.findUnique({ where: { email } })
-  if (existing) {
-    return Response.json({ error: 'An account with this email already exists' }, { status: 409 })
-  }
+  try {
+    const existing = await prisma.user.findUnique({ where: { email } })
+    if (existing) {
+      return Response.json({ error: 'An account with this email already exists' }, { status: 409 })
+    }
 
-  const user = await prisma.user.create({
-    data: { firstName, lastName, email, password: await hashPassword(password), company, role, title },
-  })
+    const user   = await prisma.user.create({
+      data: { firstName, lastName, email, password: await hashPassword(password), company, role, title },
+    })
+    const token  = await createToken({ id: user.id, email, firstName, lastName, company, role, title })
+    const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
 
-  const token = await createToken({ id: user.id, email, firstName, lastName, company, role, title })
-
-  return Response.json(
-    { data: { id: user.id, firstName, lastName, email, company, role, title } },
-    {
-      status: 201,
-      headers: {
-        'Set-Cookie': `${COOKIE_NAME}=${token}; HttpOnly; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax`,
+    return Response.json(
+      { data: { id: user.id, firstName, lastName, email, company, role, title } },
+      {
+        status: 201,
+        headers: {
+          'Set-Cookie': `${COOKIE_NAME}=${token}; HttpOnly; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax${secure}`,
+        },
       },
-    },
-  )
+    )
+  } catch {
+    return Response.json({ error: 'Service unavailable. Please try again.' }, { status: 503 })
+  }
 }

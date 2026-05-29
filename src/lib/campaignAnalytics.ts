@@ -112,17 +112,3 @@ export async function getCampaignMetrics(campaignId: string): Promise<CampaignMe
   }
 }
 
-// ─── Status derivation ────────────────────────────────────────────────────────
-
-// Priority order — higher index wins
-const STATUS_PRIORITY = ['contacted', 'opened', 'bounced', 'replied', 'meeting_booked']
-
-export function deriveStatus(eventTypes: string[]): string {
-  const set = new Set(eventTypes)
-  let best = 'contacted'
-  for (const s of STATUS_PRIORITY) {
-    const evType = s.toUpperCase().replace('_', '_')
-    if (set.has(evType)) best = s
-  }
-  return best
-}

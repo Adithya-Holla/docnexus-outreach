@@ -31,12 +31,16 @@ const TYPE_LABELS: Record<string, string> = {
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error,     setError]     = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/campaigns')
-      .then((r) => r.json() as Promise<{ data?: Campaign[] }>)
-      .then(({ data }) => setCampaigns(data ?? []))
-      .catch(() => {/* show empty state */})
+      .then((r) => r.json() as Promise<{ data?: Campaign[]; error?: string }>)
+      .then(({ data, error }) => {
+        if (error || !data) { setError('Failed to load campaigns. Please refresh.'); return }
+        setCampaigns(data)
+      })
+      .catch(() => setError('Failed to load campaigns. Please refresh.'))
       .finally(() => setIsLoading(false))
   }, [])
 
@@ -59,6 +63,13 @@ export default function CampaignsPage() {
             </Link>
           </Button>
         </div>
+
+        {/* Error banner */}
+        {error && (
+          <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
         {/* List */}
         {isLoading ? (

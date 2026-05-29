@@ -47,6 +47,11 @@ export async function PATCH(
   })
 
   if (!existing) return Response.json({ error: 'Campaign not found' }, { status: 404 })
+
+  if (existing.userId && existing.userId !== session.id) {
+    return Response.json({ error: 'Campaign not found' }, { status: 404 })
+  }
+
   if (existing.status !== 'draft') {
     return Response.json({ error: 'Campaign is already active or completed' }, { status: 400 })
   }

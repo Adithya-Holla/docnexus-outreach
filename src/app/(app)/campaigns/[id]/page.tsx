@@ -79,7 +79,7 @@ export default function CampaignDashboardPage() {
     setIsDeleting(true)
     const res = await fetch(`/api/campaigns/${id}`, { method: 'DELETE' })
     if (res.ok) { router.push('/campaigns'); router.refresh() }
-    else { setIsDeleting(false); alert('Delete failed. Please try again.') }
+    else { setIsDeleting(false); setError('Delete failed. Please try again.') }
   }
 
   // Called by EnrollmentTable when user marks a status change
@@ -145,6 +145,13 @@ export default function CampaignDashboardPage() {
             })}
           </p>
         </div>
+
+        {/* ── Error banner ─────────────────────────────────────────────────── */}
+        {error && (
+          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
         {/* ── Metrics ──────────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">

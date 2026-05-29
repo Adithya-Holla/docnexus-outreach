@@ -16,19 +16,26 @@ export async function POST(request: NextRequest) {
 
   const { email, password } = parsed.data
 
-  const user = await prisma.user.findUnique({ where: { email } })
+  let user
+  try {
+    user = await prisma.user.findUnique({ where: { email } })
+  } catch {
+    return Response.json({ error: 'Service unavailable. Please try again.' }, { status: 503 })
+  }
+
   if (!user || !(await verifyPassword(password, user.password))) {
     return Response.json({ error: 'Invalid email or password' }, { status: 401 })
   }
 
   const { id, firstName, lastName, company, role, title } = user
-  const token = await createToken({ id, email, firstName, lastName, company, role, title })
+  const token  = await createToken({ id, email, firstName, lastName, company, role, title })
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
 
   return Response.json(
     { data: { id, firstName, lastName, email, company, role, title } },
     {
       headers: {
-        'Set-Cookie': `${COOKIE_NAME}=${token}; HttpOnly; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax`,
+        'Set-Cookie': `${COOKIE_NAME}=${token}; HttpOnly; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax${secure}`,
       },
     },
   )
