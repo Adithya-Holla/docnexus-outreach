@@ -3,7 +3,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Users, Mail, BarChart2, Activity, X } from 'lucide-react'
+import { Users, Mail, BarChart2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface NavItem {
@@ -71,8 +71,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* ── Logo / wordmark ─────────────────────────────────────────────── */}
         <div className="flex h-[60px] shrink-0 items-center justify-between border-b border-slate-700/60 px-5">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-600">
-              <Activity className="h-4 w-4 text-white" />
+            <div className="flex h-7 w-7 items-center justify-center">
+              <img src="/favicon-32x32.png" alt="DocNexus logo" className="h-7 w-7 rounded-md" />
             </div>
             <span className="text-base font-semibold tracking-tight text-white">
               DocNexus

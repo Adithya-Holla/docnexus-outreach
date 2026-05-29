@@ -169,8 +169,8 @@ export function AuthForm({ defaultTab = 'login' }: { defaultTab?: 'login' | 'reg
     <div className="w-full max-w-md">
       {/* Logo / brand */}
       <div className="mb-8 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600">
-          <span className="text-xl font-bold text-white">D</span>
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center">
+          <img src="/android-chrome-192x192.png" alt="DocNexus logo" className="h-12 w-12 rounded-xl" />
         </div>
         <h1 className="text-2xl font-bold text-slate-900">DocNexus Outreach</h1>
         <p className="mt-1 text-sm text-slate-500">
