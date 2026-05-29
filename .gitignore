@@ -1,11 +1,5 @@
 # .gitignore
 
-# Blueprint PDF (confidential)
-DocNexus_Engineering_Blueprint.pdf
-
-# Claude session context exports
-Claude_context*.txt
-
 # Dependencies
 node_modules/
 /.pnp
@@ -21,9 +15,6 @@ node_modules/
 # Environment variables — never commit secrets
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
 
 # Database file — contains seed data, not versioned
 prisma/dev.db
