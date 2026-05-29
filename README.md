@@ -80,7 +80,7 @@ Searchable, filterable database of 25 HCPs across six specialties. Filters (spec
 A three-step wizard (details, sequence, review) that produces a named campaign with one or more email steps. Each step has a subject template, body template, and send-delay in days. Template variables (`{{doctor_name}}`, `{{specialty}}`, `{{affiliation}}`, etc.) are inserted via chip buttons or AI generation. Campaigns can be saved as draft for later editing and launching, or launched immediately against a physician selection.
 
 **Campaign Dashboard**
-Per-campaign analytics showing messages sent, delivered, open rate, replies, meetings booked, and bounce rate — all derived from real `EmailEvent` records written by the Resend webhook and the tracking pixel. An activity chart shows outreach volume over the last seven days. The enrollment table lists each physician with their current status and manual action buttons (Replied, Book Meeting, Bounced) for updating status without waiting for automated webhook events.
+Per-campaign analytics showing number of physicians enrolled, messages sent, open rate, replies, and number of mettings booked — all derived from real `EmailEvent` records written by the Resend webhook and the tracking pixel. An activity chart shows outreach volume over the last seven days. The enrollment table lists each physician with their current status and manual action buttons (Replied, Book Meeting) for updating status without waiting for automated webhook events.
 
 ---
 
@@ -180,7 +180,7 @@ Per-campaign analytics showing messages sent, delivered, open rate, replies, mee
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/enrollments/:enrollmentId/events` | Record a manual event (`REPLIED`, `BOUNCED`, `MEETING_BOOKED`) for an enrollment |
+| `POST` | `/api/enrollments/:enrollmentId/events` | Record a manual event (`REPLIED`, `MEETING_BOOKED`) for an enrollment |
 
 ### AI
 
@@ -193,13 +193,18 @@ Per-campaign analytics showing messages sent, delivered, open rate, replies, mee
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/api/track/open` | 1×1 tracking pixel; records an `OPENED` event when an email client loads it |
-| `POST` | `/api/webhooks/email` | Resend webhook receiver; processes `DELIVERED`, `OPENED`, `REPLIED`, and `BOUNCED` events |
+| `POST` | `/api/webhooks/email` | Resend webhook receiver; processes `DELIVERED`, `OPENED`, `REPLIED` events |
 
 ---
 
 ## Screenshots
 
-[Screenshots coming — see video demo below]
+<img width="1916" height="979" alt="Screenshot 2026-05-29 232234" src="https://github.com/user-attachments/assets/4a051df8-aca0-4609-837e-ebbf953730f1" />
+<img width="1914" height="980" alt="Screenshot 2026-05-29 232254" src="https://github.com/user-attachments/assets/843aed1b-62f3-4090-a54a-87813b5b555a" />
+<img width="1912" height="979" alt="Screenshot 2026-05-29 234034" src="https://github.com/user-attachments/assets/d2c41c6e-7a02-400d-9c1f-c88edd7fe035" />
+<img width="1913" height="978" alt="Screenshot 2026-05-29 234044" src="https://github.com/user-attachments/assets/92bb3ce8-9665-419c-a212-fdbce5da0203" />
+<img width="1909" height="977" alt="Screenshot 2026-05-29 234055" src="https://github.com/user-attachments/assets/3de62187-57a1-42cd-94b0-00493f185ba1" />
+<img width="1914" height="976" alt="Screenshot 2026-05-29 234113" src="https://github.com/user-attachments/assets/97cb2b7a-23d0-4f2d-8491-16e8180dd9a4" />
 
 ---
 
