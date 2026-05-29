@@ -1,23 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useEffect, useState, useCallback } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import {
-  Users, Mail, Eye, MessageSquare, CalendarCheck, Trash2,
+  Users, Mail, SendHorizonal, Eye, MessageSquare, CalendarCheck, Trash2, TrendingDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useRouter } from 'next/navigation'
 import { Skeleton } from '@/components/ui/skeleton'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { EnrollmentTable } from '@/components/dashboard/EnrollmentTable'
 import { ActivityChart } from '@/components/dashboard/ActivityChart'
+import type { ChartDay, CampaignMetrics } from '@/lib/campaignAnalytics'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface SequenceStep {
-  id:         string
-  stepNumber: number
-}
 
 interface Enrollment {
   id:         string
@@ -37,8 +32,8 @@ interface Campaign {
   type:        string
   status:      string
   createdAt:   string
-  sequences:   SequenceStep[]
   enrollments: Enrollment[]
+  analytics:   CampaignMetrics
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -58,14 +53,15 @@ const TYPE_LABELS: Record<string, string> = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function CampaignDashboardPage() {
-  const { id }                            = useParams<{ id: string }>()
-  const router                            = useRouter()
-  const [campaign, setCampaign]           = useState<Campaign | null>(null)
-  const [isLoading, setIsLoading]         = useState(true)
-  const [isDeleting, setIsDeleting]       = useState(false)
-  const [error, setError]                 = useState<string | null>(null)
+  const { id }    = useParams<{ id: string }>()
+  const router    = useRouter()
 
-  useEffect(() => {
+  const [campaign,   setCampaign]   = useState<Campaign | null>(null)
+  const [isLoading,  setIsLoading]  = useState(true)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [error,      setError]      = useState<string | null>(null)
+
+  const load = useCallback(() => {
     fetch(`/api/campaigns/${id}`)
       .then((r) => r.json() as Promise<{ data?: Campaign; error?: string }>)
       .then(({ data, error }) => {
@@ -76,17 +72,32 @@ export default function CampaignDashboardPage() {
       .finally(() => setIsLoading(false))
   }, [id])
 
+  useEffect(() => { load() }, [load])
+
   async function handleDelete() {
     if (!confirm(`Delete "${campaign?.name}"? This cannot be undone.`)) return
     setIsDeleting(true)
     const res = await fetch(`/api/campaigns/${id}`, { method: 'DELETE' })
-    if (res.ok) {
-      router.push('/campaigns')
-      router.refresh()
-    } else {
-      setIsDeleting(false)
-      alert('Failed to delete campaign. Please try again.')
-    }
+    if (res.ok) { router.push('/campaigns'); router.refresh() }
+    else { setIsDeleting(false); alert('Delete failed. Please try again.') }
+  }
+
+  // Called by EnrollmentTable when user marks a status change
+  function handleStatusChange(enrollmentId: string, newStatus: string) {
+    setCampaign((prev) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        enrollments: prev.enrollments.map((e) =>
+          e.id === enrollmentId ? { ...e, status: newStatus } : e,
+        ),
+      }
+    })
+    // Reload analytics (counts changed)
+    fetch(`/api/campaigns/${id}`)
+      .then((r) => r.json() as Promise<{ data?: Campaign }>)
+      .then(({ data }) => { if (data) setCampaign(data) })
+      .catch(() => {/* soft fail */})
   }
 
   if (isLoading) return <LoadingSkeleton />
@@ -99,11 +110,8 @@ export default function CampaignDashboardPage() {
     )
   }
 
-  const enrolled     = campaign.enrollments.length
-  const stepCount    = campaign.sequences.length
-  const messagesSent = enrolled * stepCount
-  const replies      = Math.floor(enrolled * 0.18)
-  const meetings     = Math.floor(enrolled * 0.08)
+  const { analytics } = campaign
+  const enrolled = campaign.enrollments.length
 
   return (
     <div className="overflow-y-auto h-full">
@@ -111,7 +119,7 @@ export default function CampaignDashboardPage() {
 
         {/* ── Header ───────────────────────────────────────────────────────── */}
         <div className="space-y-1">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-xl font-bold text-slate-900">{campaign.name}</h1>
             <span className={cn(
               'rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize',
@@ -138,24 +146,42 @@ export default function CampaignDashboardPage() {
           </p>
         </div>
 
-        {/* ── Metrics row ──────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          <MetricCard label="Physicians Enrolled" value={enrolled}      icon={Users}          trend={enrolled > 0 ? `${stepCount} step sequence` : undefined} />
-          <MetricCard label="Messages Sent"        value={messagesSent} icon={Mail}           trend={enrolled > 0 ? `${stepCount} steps × ${enrolled}` : undefined} />
-          <MetricCard label="Open Rate"            value="41.3%"        icon={Eye}            trend="+2.1% vs last campaign" />
-          <MetricCard label="Replies"              value={replies}      icon={MessageSquare}  trend={enrolled > 0 ? `${Math.round(replies / Math.max(enrolled, 1) * 100)}% reply rate` : undefined} />
-          <MetricCard label="Meetings Booked"      value={meetings}     icon={CalendarCheck}  trend={enrolled > 0 ? `${Math.round(meetings / Math.max(enrolled, 1) * 100)}% conversion` : undefined} />
+        {/* ── Metrics ──────────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
+          <div className="col-span-2 sm:col-span-1 xl:col-span-2">
+            <MetricCard label="Enrolled"     value={enrolled}                icon={Users}          trend={`${campaign.enrollments.length} physician${enrolled !== 1 ? 's' : ''}`} />
+          </div>
+          <div className="col-span-2 sm:col-span-1 xl:col-span-2">
+            <MetricCard label="Sent"         value={analytics.messagesSent}  icon={Mail} />
+          </div>
+          <div className="col-span-2 sm:col-span-1 xl:col-span-2">
+            <MetricCard label="Delivered"    value={analytics.delivered}     icon={SendHorizonal} />
+          </div>
+          <div className="xl:col-span-2">
+            <MetricCard label="Open Rate"    value={`${analytics.openRate}%`} icon={Eye}           trend={analytics.opened > 0 ? `${analytics.opened} unique opens` : 'No opens yet'} />
+          </div>
         </div>
 
-        {/* ── Chart + table ────────────────────────────────────────────────── */}
-        <ActivityChart />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <MetricCard label="Replies"        value={analytics.replied}       icon={MessageSquare}  trend={`${analytics.replyRate}% reply rate`} />
+          <MetricCard label="Meetings"       value={analytics.meetingsBooked} icon={CalendarCheck}  trend={analytics.meetingsBooked > 0 ? 'booked via dashboard' : 'None yet'} />
+          <MetricCard label="Bounced"        value={analytics.bounced}       icon={TrendingDown}   trend={`${analytics.bounceRate}% bounce rate`} />
+          <MetricCard label="Reply Rate"     value={`${analytics.replyRate}%`} icon={MessageSquare} />
+        </div>
 
+        {/* ── Chart ────────────────────────────────────────────────────────── */}
+        <ActivityChart data={analytics.chartData} />
+
+        {/* ── Enrollment table ─────────────────────────────────────────────── */}
         <div className="space-y-3">
           <h2 className="text-[13px] font-semibold text-slate-700">
             Enrolled Physicians
             <span className="ml-2 text-slate-400 font-normal">({enrolled})</span>
           </h2>
-          <EnrollmentTable enrollments={campaign.enrollments} />
+          <EnrollmentTable
+            enrollments={campaign.enrollments}
+            onStatusChange={handleStatusChange}
+          />
         </div>
 
       </div>
@@ -172,10 +198,8 @@ function LoadingSkeleton() {
         <Skeleton className="h-7 w-72" />
         <Skeleton className="h-4 w-48" />
       </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-28 rounded-lg" />
-        ))}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-lg" />)}
       </div>
       <Skeleton className="h-56 rounded-lg" />
       <Skeleton className="h-64 rounded-lg" />

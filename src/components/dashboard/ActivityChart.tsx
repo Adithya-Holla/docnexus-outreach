@@ -1,28 +1,29 @@
 'use client'
 
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
+import type { ChartDay } from '@/lib/campaignAnalytics'
 
-const MOCK_DATA = [
-  { day: 'Mon', sent: 3  },
-  { day: 'Tue', sent: 8  },
-  { day: 'Wed', sent: 12 },
-  { day: 'Thu', sent: 9  },
-  { day: 'Fri', sent: 15 },
-  { day: 'Sat', sent: 6  },
-  { day: 'Sun', sent: 4  },
-]
+interface Props {
+  data: ChartDay[]
+}
 
-export function ActivityChart() {
+export function ActivityChart({ data }: Props) {
+  const hasActivity = data.some((d) => d.sent > 0)
+
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-5">
-      <h3 className="mb-5 text-[13px] font-semibold text-slate-700">
-        Outreach Activity (Last 7 Days)
-      </h3>
+      <div className="mb-5 flex items-center justify-between">
+        <h3 className="text-[13px] font-semibold text-slate-700">
+          Outreach Activity (Last 7 Days)
+        </h3>
+        {!hasActivity && (
+          <span className="text-[11px] text-slate-400">No dispatches in this window</span>
+        )}
+      </div>
       <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={MOCK_DATA} barSize={28} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+        <BarChart data={data} barSize={28} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
           <XAxis
             dataKey="day"

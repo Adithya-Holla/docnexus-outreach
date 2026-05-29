@@ -72,6 +72,8 @@ model Campaign {
 
   sequences   SequenceStep[]
   enrollments CampaignEnrollment[]
+  dispatches  EmailDispatch[]
+  events      EmailEvent[]
 }
 
 /// A single email step within a campaign's outreach sequence.
@@ -86,26 +88,82 @@ model SequenceStep {
   bodyTemplate    String
   campaignId      String
 
-  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign   Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  dispatches EmailDispatch[]
 
   @@index([campaignId])
 }
 
 /// Join table tracking which physicians are enrolled in which campaigns.
 /// status reflects the current outreach state for a given physician in a given campaign.
+/// Status is auto-derived from EmailEvents — the UI and webhooks write events,
+/// and the analytics layer computes the effective status.
 /// The @@unique constraint prevents enrolling the same physician in a campaign twice.
 model CampaignEnrollment {
   id          String   @id @default(uuid())
   campaignId  String
   physicianId String
-  /// contacted | replied | bounced
+  /// pending | contacted | opened | replied | bounced | meeting_booked
   status      String   @default("contacted")
   enrolledAt  DateTime @default(now())
 
-  campaign  Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  physician Physician @relation(fields: [physicianId], references: [id])
+  campaign   Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  physician  Physician       @relation(fields: [physicianId], references: [id])
+  dispatches EmailDispatch[]
+  events     EmailEvent[]
 
   @@unique([campaignId, physicianId])
   @@index([campaignId])
   @@index([physicianId])
+}
+
+/// One record per email sent to a physician for a specific sequence step.
+/// Created atomically when the campaign is launched (or when a scheduled step fires).
+model EmailDispatch {
+  id                String   @id @default(uuid())
+  campaignId        String
+  physicianId       String
+  enrollmentId      String
+  sequenceStepId    String
+  sentAt            DateTime @default(now())
+  /// Message-ID from email provider (SendGrid, Resend, etc.) for webhook correlation
+  providerMessageId String?
+
+  campaign     Campaign           @relation(fields: [campaignId],    references: [id], onDelete: Cascade)
+  enrollment   CampaignEnrollment @relation(fields: [enrollmentId],  references: [id], onDelete: Cascade)
+  sequenceStep SequenceStep       @relation(fields: [sequenceStepId], references: [id], onDelete: Cascade)
+  events       EmailEvent[]
+
+  @@index([campaignId])
+  @@index([enrollmentId])
+  @@index([sentAt])
+}
+
+/// Immutable audit log of every email-lifecycle event.
+/// dispatchId is nullable so manually recorded events (e.g. MEETING_BOOKED via UI)
+/// don't need to be tied to a specific dispatch.
+/// providerEventId ensures webhook replays are idempotent.
+model EmailEvent {
+  id              String   @id @default(uuid())
+  dispatchId      String?
+  campaignId      String
+  physicianId     String
+  enrollmentId    String
+  /// SENT | DELIVERED | OPENED | REPLIED | BOUNCED | MEETING_BOOKED
+  eventType       String
+  timestamp       DateTime @default(now())
+  /// Arbitrary JSON string (e.g. provider metadata, user-agent, IP)
+  metadata        String?
+  /// Unique ID from the email provider — prevents duplicate webhook events
+  providerEventId String?  @unique
+
+  dispatch   EmailDispatch?     @relation(fields: [dispatchId],  references: [id], onDelete: Cascade)
+  campaign   Campaign           @relation(fields: [campaignId],  references: [id], onDelete: Cascade)
+  enrollment CampaignEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([enrollmentId])
+  @@index([dispatchId])
+  @@index([eventType])
+  @@index([timestamp])
 }

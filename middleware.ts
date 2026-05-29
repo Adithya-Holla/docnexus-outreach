@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 
-const PUBLIC_PREFIXES = ['/login', '/api/auth/login', '/api/auth/register']
+const PUBLIC_PREFIXES = [
+  '/login',
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/track/',         // tracking pixel — must be public (email clients load it)
+  '/api/webhooks/',      // email provider webhooks — must be public
+]
 
 function secret() {
   return new TextEncoder().encode(process.env.JWT_SECRET ?? '')
