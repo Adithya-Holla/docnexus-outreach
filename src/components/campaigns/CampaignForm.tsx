@@ -12,6 +12,7 @@ import { useCampaign } from '@/hooks/useCampaign'
 import { SequenceStep } from './SequenceStep'
 import { PreviewPanel } from './PreviewPanel'
 import type { Physician, PhysiciansResponse } from '@/types'
+import type { SessionUser } from '@/lib/auth'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -29,9 +30,10 @@ const TYPE_OPTIONS = [
 
 interface Props {
   physicianIds: string[]
+  user:         SessionUser
 }
 
-export function CampaignForm({ physicianIds }: Props) {
+export function CampaignForm({ physicianIds, user }: Props) {
   const router  = useRouter()
   const [step, setStep]                         = useState<1 | 2 | 3>(1)
   const [previewPhysicians, setPreviewPhysicians] = useState<Physician[]>([])
@@ -258,6 +260,7 @@ export function CampaignForm({ physicianIds }: Props) {
         <PreviewPanel
           sequences={sequences}
           physician={previewPhysicians[previewIdx] ?? null}
+          sender={{ name: `${user.firstName} ${user.lastName}`, email: user.email }}
           physicianIndex={previewPhysicians.length > 0 ? previewIdx + 1 : undefined}
           physicianCount={previewPhysicians.length > 0 ? previewPhysicians.length : undefined}
           onPrev={() => setPreviewIdx((i) => Math.max(0, i - 1))}

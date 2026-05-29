@@ -1,29 +1,23 @@
-// src/components/layout/LayoutShell.tsx
 'use client'
 
 import { useState } from 'react'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
+import type { SessionUser } from '@/lib/auth'
 
-/**
- * Client wrapper that owns the mobile-sidebar open/close state.
- * Keeping state here (rather than in layout.tsx) lets layout.tsx remain a
- * Server Component while Sidebar and TopBar share the same boolean.
- */
-export function LayoutShell({ children }: { children: React.ReactNode }) {
+interface Props {
+  children: React.ReactNode
+  user:     SessionUser
+}
+
+export function LayoutShell({ children, user }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
     <div className="flex h-screen overflow-hidden bg-white">
-      <Sidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
-
-      {/* Right column: TopBar + scrollable page content */}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <TopBar onMenuClick={() => setSidebarOpen(true)} />
-        {/* overflow-hidden lets each page own its scroll strategy */}
+        <TopBar onMenuClick={() => setSidebarOpen(true)} user={user} />
         <main className="flex-1 overflow-hidden bg-slate-50">
           {children}
         </main>

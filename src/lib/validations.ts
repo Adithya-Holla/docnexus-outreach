@@ -1,6 +1,30 @@
 // src/lib/validations.ts
 import { z } from 'zod'
 
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+export const USER_ROLES = ['pharma_marketing_manager', 'msl', 'medical_device_rep', 'other'] as const
+
+export const RegisterSchema = z.object({
+  firstName: z.string().min(1, 'Required'),
+  lastName:  z.string().min(1, 'Required'),
+  email:     z.string().email('Enter a valid email'),
+  password:  z.string().min(8, 'At least 8 characters'),
+  company:   z.string().min(1, 'Required'),
+  role:      z.enum(USER_ROLES, { errorMap: () => ({ message: 'Select a role' }) }),
+  title:     z.string().min(1, 'Required'),
+})
+
+export const LoginSchema = z.object({
+  email:    z.string().email('Enter a valid email'),
+  password: z.string().min(1, 'Required'),
+})
+
+export type RegisterInput = z.infer<typeof RegisterSchema>
+export type LoginInput    = z.infer<typeof LoginSchema>
+
+// ─── Campaign ─────────────────────────────────────────────────────────────────
+
 export const SequenceStepSchema = z.object({
   stepNumber:      z.number().int().min(1),
   delayDays:       z.number().int('Must be a whole number').min(0, 'Delay must be 0 or more days'),

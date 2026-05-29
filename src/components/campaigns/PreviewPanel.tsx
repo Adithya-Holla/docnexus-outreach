@@ -12,14 +12,15 @@ type StepData = CampaignFormValues['sequences'][number]
 interface PreviewPanelProps {
   sequences:       StepData[]
   physician:       Physician | null
-  physicianIndex?: number   // 1-based
+  sender:          { name: string; email: string } | null
+  physicianIndex?: number
   physicianCount?: number
   onPrev?:         () => void
   onNext?:         () => void
 }
 
 export function PreviewPanel({
-  sequences, physician,
+  sequences, physician, sender,
   physicianIndex, physicianCount, onPrev, onNext,
 }: PreviewPanelProps) {
   const [activeStep, setActiveStep] = useState(0)
@@ -111,7 +112,11 @@ export function PreviewPanel({
           {/* Headers */}
           <div className="space-y-2 border-b border-slate-100 bg-slate-50 px-4 py-3">
             <Row label="From">
-              <span className="text-slate-700">DocNexus Outreach &lt;outreach@docnexus.io&gt;</span>
+              {sender ? (
+                <span className="text-slate-700">{sender.name} &lt;{sender.email}&gt;</span>
+              ) : (
+                <em className="not-italic text-slate-400">No sender info</em>
+              )}
             </Row>
             <Row label="To">
               {physician ? (

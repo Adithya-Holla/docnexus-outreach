@@ -9,6 +9,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// Platform user — pharma/MSL/device rep who logs in and creates campaigns.
+/// Password is bcrypt-hashed (cost factor 12). Role drives AI prompt framing.
+model User {
+  id        String   @id @default(uuid())
+  firstName String
+  lastName  String
+  email     String   @unique
+  password  String
+  company   String
+  /// pharma_marketing_manager | msl | medical_device_rep | other
+  role      String
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+}
+
 /// Represents a licensed healthcare professional (HCP) in the system.
 /// Physicians are read-only seed data — created via seed script, never via UI.
 /// Indexed on all filterable fields used in the Physician Discovery module.
