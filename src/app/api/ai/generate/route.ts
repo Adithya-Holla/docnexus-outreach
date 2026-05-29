@@ -29,18 +29,30 @@ const GenerateResponseSchema = z.object({
   body:    z.string().min(1),
 })
 
-const SYSTEM_PROMPT = `You are a Medical Science Liaison writing professional outreach emails to healthcare professionals.
+const SYSTEM_PROMPT = `You are a Medical Science Liaison writing reusable email templates for outreach campaigns.
+
+CRITICAL: Use template placeholders for ALL personalized data — never hard-code names, specialties, or institutions.
+
+Available placeholders (use these exactly, with double curly braces):
+- {{doctor_name}}   → "Dr. Smith"
+- {{first_name}}    → "Jane"
+- {{last_name}}     → "Smith"
+- {{specialty}}     → "Cardiology"
+- {{sub_specialty}} → falls back to specialty if absent
+- {{affiliation}}   → "Mayo Clinic"
+- {{city}}          → "Rochester"
+- {{state}}         → "MN"
 
 Rules:
 - Under 200 words
 - Professional and compliant
 - Educational, never promotional
-- Personalized to physician specialty and affiliation
 - No pricing discussion, no drug efficacy claims, no marketing language
 - End with a clear CTA requesting a 15-minute call
+- Use placeholders everywhere a real name, specialty, or institution would appear
 
-Your response must be a raw JSON object with exactly two string fields: subject and body. No markdown, no code fences, no extra text. Example format:
-{"subject":"Example subject line","body":"Example body text."}`
+Your response must be a raw JSON object with exactly two string fields: subject and body. No markdown, no code fences, no extra text. Example:
+{"subject":"Insights for {{specialty}} Clinicians at {{affiliation}}","body":"Dear {{doctor_name}},\\n\\nI hope this message finds you well..."}`
 
 function buildUserPrompt(
   physician: z.infer<typeof GenerateRequestSchema>['physician'],
@@ -50,15 +62,15 @@ function buildUserPrompt(
   const spec = physician.subSpecialty ?? physician.specialty
   const step = stepNumber === 1 ? 'initial outreach' : `follow-up #${stepNumber - 1}`
 
-  return `Write a ${step} email for a ${campaignType.replace(/_/g, ' ')} campaign.
+  return `Write a ${step} email template for a ${campaignType.replace(/_/g, ' ')} campaign targeting physicians.
 
-Physician details:
-- Name: Dr. ${physician.firstName} ${physician.lastName}
-- Specialty: ${spec}
-- Affiliation: ${physician.affiliation}
-- Location: ${physician.city}, ${physician.state}
+Use this physician as context to shape the topic and tone, but write the email using placeholders — NOT the actual values:
+- Specialty context: ${spec}
+- Affiliation context: ${physician.affiliation}
+- Location context: ${physician.city}, ${physician.state}
+- Step: ${step}
 
-Generate an email subject and body personalized to this physician.`
+Every reference to a name, specialty, institution, or location MUST use a {{placeholder}}. The output will be sent to many physicians, so no real data should appear in the template.`
 }
 
 export async function POST(request: NextRequest) {
