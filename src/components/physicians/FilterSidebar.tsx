@@ -15,10 +15,12 @@ const US_STATES = [
 ]
 
 interface FilterSidebarProps {
-  filters:        FilterState
-  specialties:    string[]
-  onFilterChange: (key: keyof FilterState, value: string) => void
-  onClearFilters: () => void
+  filters:         FilterState
+  specialties:     string[]
+  onFilterChange:  (key: keyof FilterState, value: string) => void
+  onClearFilters:  () => void
+  mobileOpen?:     boolean
+  onMobileClose?:  () => void
 }
 
 const labelCls = 'block text-[11px] font-semibold uppercase tracking-widest text-slate-500 mb-1.5'
@@ -29,13 +31,14 @@ const inputCls = [
   'disabled:cursor-not-allowed disabled:opacity-50',
 ].join(' ')
 
-export function FilterSidebar({ filters, specialties, onFilterChange, onClearFilters }: FilterSidebarProps) {
-  // Text inputs commit to URL on blur/Enter to avoid per-keystroke API calls
+export function FilterSidebar({
+  filters, specialties, onFilterChange, onClearFilters,
+  mobileOpen = false, onMobileClose,
+}: FilterSidebarProps) {
   const [localAffiliation, setLocalAffiliation] = useState(filters.affiliation)
   const [localYearFrom,    setLocalYearFrom]    = useState(filters.yearFrom)
   const [localYearTo,      setLocalYearTo]      = useState(filters.yearTo)
 
-  // Sync local state when the parent resets (e.g. "Clear all")
   useEffect(() => setLocalAffiliation(filters.affiliation), [filters.affiliation])
   useEffect(() => setLocalYearFrom(filters.yearFrom),       [filters.yearFrom])
   useEffect(() => setLocalYearTo(filters.yearTo),           [filters.yearTo])
@@ -45,117 +48,155 @@ export function FilterSidebar({ filters, specialties, onFilterChange, onClearFil
   const commitAffiliation = () => onFilterChange('affiliation', localAffiliation)
   const commitYearFrom    = () => onFilterChange('yearFrom',    localYearFrom)
   const commitYearTo      = () => onFilterChange('yearTo',      localYearTo)
-
   const onEnter = (commit: () => void) =>
     (e: React.KeyboardEvent) => { if (e.key === 'Enter') commit() }
 
-  return (
-    <aside className="sticky top-0 self-start w-64 shrink-0 border-r border-slate-200 bg-white">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
-          <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-            Filters
-          </span>
-        </div>
-        {hasActive && (
-          <button
-            onClick={onClearFilters}
-            className="flex items-center gap-1 text-[11px] font-medium text-blue-600 hover:text-blue-800"
-          >
-            <X className="h-3 w-3" />
-            Clear all
-          </button>
-        )}
+  const filterBody = (
+    <div className="space-y-5 p-4">
+
+      {/* Specialty */}
+      <div>
+        <label className={labelCls}>Specialty</label>
+        <select
+          value={filters.specialty}
+          onChange={(e) => onFilterChange('specialty', e.target.value)}
+          className={inputCls}
+        >
+          <option value="">All Specialties</option>
+          {specialties.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
       </div>
 
-      <div className="space-y-5 p-4">
+      {/* State */}
+      <div>
+        <label className={labelCls}>State</label>
+        <select
+          value={filters.state}
+          onChange={(e) => onFilterChange('state', e.target.value)}
+          className={inputCls}
+        >
+          <option value="">All States</option>
+          {US_STATES.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+      </div>
 
-        {/* Specialty */}
-        <div>
-          <label className={labelCls}>Specialty</label>
-          <select
-            value={filters.specialty}
-            onChange={(e) => onFilterChange('specialty', e.target.value)}
-            className={inputCls}
-          >
-            <option value="">All Specialties</option>
-            {specialties.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </div>
+      {/* Affiliation */}
+      <div>
+        <label className={labelCls}>Affiliation</label>
+        <input
+          type="text"
+          placeholder="e.g. Johns Hopkins"
+          value={localAffiliation}
+          onChange={(e) => setLocalAffiliation(e.target.value)}
+          onBlur={commitAffiliation}
+          onKeyDown={onEnter(commitAffiliation)}
+          className={inputCls}
+        />
+      </div>
 
-        {/* State */}
-        <div>
-          <label className={labelCls}>State</label>
-          <select
-            value={filters.state}
-            onChange={(e) => onFilterChange('state', e.target.value)}
-            className={inputCls}
-          >
-            <option value="">All States</option>
-            {US_STATES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Affiliation */}
-        <div>
-          <label className={labelCls}>Affiliation</label>
+      {/* NPI Year Range */}
+      <div>
+        <label className={labelCls}>NPI Registration Year</label>
+        <div className="flex items-center gap-2">
           <input
-            type="text"
-            placeholder="e.g. Johns Hopkins"
-            value={localAffiliation}
-            onChange={(e) => setLocalAffiliation(e.target.value)}
-            onBlur={commitAffiliation}
-            onKeyDown={onEnter(commitAffiliation)}
-            className={inputCls}
+            type="number"
+            placeholder="From"
+            min={1990}
+            max={2030}
+            value={localYearFrom}
+            onChange={(e) => setLocalYearFrom(e.target.value)}
+            onBlur={commitYearFrom}
+            onKeyDown={onEnter(commitYearFrom)}
+            className={cn(inputCls, '[appearance:textfield]')}
+          />
+          <span className="shrink-0 text-xs text-slate-400">–</span>
+          <input
+            type="number"
+            placeholder="To"
+            min={1990}
+            max={2030}
+            value={localYearTo}
+            onChange={(e) => setLocalYearTo(e.target.value)}
+            onBlur={commitYearTo}
+            onKeyDown={onEnter(commitYearTo)}
+            className={cn(inputCls, '[appearance:textfield]')}
           />
         </div>
-
-        {/* NPI Year Range */}
-        <div>
-          <label className={labelCls}>NPI Registration Year</label>
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              placeholder="From"
-              min={1990}
-              max={2030}
-              value={localYearFrom}
-              onChange={(e) => setLocalYearFrom(e.target.value)}
-              onBlur={commitYearFrom}
-              onKeyDown={onEnter(commitYearFrom)}
-              className={cn(inputCls, '[appearance:textfield]')}
-            />
-            <span className="shrink-0 text-xs text-slate-400">–</span>
-            <input
-              type="number"
-              placeholder="To"
-              min={1990}
-              max={2030}
-              value={localYearTo}
-              onChange={(e) => setLocalYearTo(e.target.value)}
-              onBlur={commitYearTo}
-              onKeyDown={onEnter(commitYearTo)}
-              className={cn(inputCls, '[appearance:textfield]')}
-            />
-          </div>
-        </div>
-
-        {/* Explicit clear button at the bottom */}
-        {hasActive && (
-          <button
-            onClick={onClearFilters}
-            className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-          >
-            Clear All Filters
-          </button>
-        )}
       </div>
-    </aside>
+
+      {hasActive && (
+        <button
+          onClick={() => { onClearFilters(); onMobileClose?.() }}
+          className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+        >
+          Clear All Filters
+        </button>
+      )}
+    </div>
+  )
+
+  return (
+    <>
+      {/* ── Mobile backdrop ─────────────────────────────────────────────── */}
+      <div
+        aria-hidden="true"
+        onClick={onMobileClose}
+        className={cn(
+          'fixed inset-0 z-30 bg-black/40 transition-opacity duration-200 md:hidden',
+          mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+        )}
+      />
+
+      {/* ── Mobile drawer ───────────────────────────────────────────────── */}
+      <div
+        className={cn(
+          'fixed inset-y-0 left-0 z-40 w-72 bg-white shadow-xl transition-transform duration-200 ease-in-out md:hidden',
+          'flex flex-col overflow-y-auto',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
+      >
+        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+              Filters
+            </span>
+          </div>
+          <button
+            onClick={onMobileClose}
+            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        {filterBody}
+      </div>
+
+      {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
+      <aside className="hidden md:flex md:flex-col sticky top-0 self-start w-64 shrink-0 border-r border-slate-200 bg-white h-full overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+              Filters
+            </span>
+          </div>
+          {hasActive && (
+            <button
+              onClick={onClearFilters}
+              className="flex items-center gap-1 text-[11px] font-medium text-blue-600 hover:text-blue-800"
+            >
+              <X className="h-3 w-3" />
+              Clear all
+            </button>
+          )}
+        </div>
+        {filterBody}
+      </aside>
+    </>
   )
 }

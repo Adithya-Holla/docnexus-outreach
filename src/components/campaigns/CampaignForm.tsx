@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Check, Plus, Rocket, Save } from 'lucide-react'
+import { Check, Plus, Rocket, Save, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { toast } from '@/hooks/use-toast'
@@ -42,6 +42,7 @@ export function CampaignForm({ physicianIds, user, campaignId, initialValues }: 
   const [step, setStep]                         = useState<1 | 2 | 3>(1)
   const [previewPhysicians, setPreviewPhysicians] = useState<Physician[]>([])
   const [previewIdx, setPreviewIdx]               = useState(0)
+  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false)
   const { saveDraft, launchCampaign, updateDraft, updateAndLaunch, isLoading, error } = useCampaign()
 
   // Fetch ALL selected physicians for the preview carousel — no dedicated endpoint, filter client-side
@@ -224,6 +225,33 @@ export function CampaignForm({ physicianIds, user, campaignId, initialValues }: 
                 <Plus className="h-4 w-4" />
                 Add Follow-up Step
               </button>
+
+              {/* Mobile preview toggle — only on screens narrower than lg */}
+              <div className="lg:hidden">
+                <button
+                  type="button"
+                  onClick={() => setMobilePreviewOpen((v) => !v)}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                >
+                  {mobilePreviewOpen
+                    ? <><EyeOff className="h-4 w-4" /> Hide Preview</>
+                    : <><Eye    className="h-4 w-4" /> Show Preview</>
+                  }
+                </button>
+                {mobilePreviewOpen && (
+                  <div className="mt-3 h-[520px] overflow-hidden rounded-lg border border-slate-200">
+                    <PreviewPanel
+                      sequences={sequences}
+                      physician={previewPhysicians[previewIdx] ?? null}
+                      sender={{ name: `${user.firstName} ${user.lastName}`, email: user.email }}
+                      physicianIndex={previewPhysicians.length > 0 ? previewIdx + 1 : undefined}
+                      physicianCount={previewPhysicians.length > 0 ? previewPhysicians.length : undefined}
+                      onPrev={() => setPreviewIdx((i) => Math.max(0, i - 1))}
+                      onNext={() => setPreviewIdx((i) => Math.min(previewPhysicians.length - 1, i + 1))}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -312,8 +340,8 @@ export function CampaignForm({ physicianIds, user, campaignId, initialValues }: 
         </div>
       </div>
 
-      {/* ── Preview panel (xl+) ──────────────────────────────────────────── */}
-      <div className="hidden xl:flex w-[340px] shrink-0 flex-col border-l border-slate-200">
+      {/* ── Preview panel (lg+) ──────────────────────────────────────────── */}
+      <div className="hidden lg:flex w-[340px] shrink-0 flex-col border-l border-slate-200">
         <PreviewPanel
           sequences={sequences}
           physician={previewPhysicians[previewIdx] ?? null}

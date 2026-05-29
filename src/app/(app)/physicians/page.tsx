@@ -2,6 +2,7 @@
 
 import { useState, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { SlidersHorizontal } from 'lucide-react'
 import { FilterSidebar } from '@/components/physicians/FilterSidebar'
 import { PhysicianGrid }  from '@/components/physicians/PhysicianGrid'
 import { SelectionBar }   from '@/components/physicians/SelectionBar'
@@ -14,7 +15,8 @@ function PhysiciansContent() {
   const pathname     = usePathname()
   const searchParams = useSearchParams()
 
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [selectedIds,      setSelectedIds]      = useState<Set<string>>(new Set())
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
 
   const { data, isLoading, isError, refetch } = usePhysicians()
 
@@ -39,7 +41,6 @@ function PhysiciansContent() {
     })
   }, [])
 
-  // If ?campaign=<id> is in the URL we're selecting physicians for an existing draft
   const existingCampaignId = searchParams.get('campaign')
 
   const handleSaveToCampaign = useCallback(() => {
@@ -59,11 +60,38 @@ function PhysiciansContent() {
     yearTo:      searchParams.get('yearTo')      ?? '',
   }
 
+  const hasActiveFilters = Object.values(filters).some(Boolean)
+
   return (
     <div className="flex h-full bg-white">
-      <FilterSidebar filters={filters} specialties={data?.specialties ?? []} onFilterChange={updateFilter} onClearFilters={clearFilters} />
-      <div className="flex-1 min-w-0 overflow-y-auto p-6 pb-24">
-        <div className="mb-5 flex items-baseline gap-2">
+      <FilterSidebar
+        filters={filters}
+        specialties={data?.specialties ?? []}
+        onFilterChange={updateFilter}
+        onClearFilters={clearFilters}
+        mobileOpen={mobileFilterOpen}
+        onMobileClose={() => setMobileFilterOpen(false)}
+      />
+
+      <div className="flex-1 min-w-0 overflow-y-auto p-4 pb-24 md:p-6 md:pb-24">
+
+        {/* ── Mobile toolbar ─────────────────────────────────────────────── */}
+        <div className="mb-4 flex items-center gap-3 md:mb-5">
+          {/* Filter button — mobile only */}
+          <button
+            onClick={() => setMobileFilterOpen(true)}
+            className="flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 md:hidden"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            Filters
+            {hasActiveFilters && (
+              <span className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                {Object.values(filters).filter(Boolean).length}
+              </span>
+            )}
+          </button>
+
+          {/* Physician count */}
           {data ? (
             <p className="text-sm text-slate-500">
               <span className="font-semibold text-slate-900">{data.total.toLocaleString()}</span>{' '}
@@ -79,6 +107,7 @@ function PhysiciansContent() {
             <Skeleton className="h-4 w-64" />
           )}
         </div>
+
         <PhysicianGrid
           physicians={data?.data ?? []}
           isLoading={isLoading}
@@ -89,6 +118,7 @@ function PhysiciansContent() {
           onToggleSelection={toggleSelection}
         />
       </div>
+
       <SelectionBar selectedCount={selectedIds.size} onSaveToCampaign={handleSaveToCampaign} />
     </div>
   )

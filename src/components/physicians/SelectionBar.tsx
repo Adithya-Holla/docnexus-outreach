@@ -22,7 +22,7 @@ export function SelectionBar({ selectedCount, onSaveToCampaign }: SelectionBarPr
     <div
       aria-live="polite"
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-40 md:left-60',
+        'fixed bottom-0 left-0 right-0 z-40 md:left-64',
         'transition-all duration-300 ease-in-out',
         visible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none',
       )}
