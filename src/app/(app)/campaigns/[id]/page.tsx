@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  Users, Mail, SendHorizonal, Eye, MessageSquare, CalendarCheck, Trash2, TrendingDown, Pencil, UserSearch,
+  Users, Mail, Eye, MessageSquare, CalendarCheck, Trash2, Pencil, UserSearch,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -51,6 +51,8 @@ const TYPE_LABELS: Record<string, string> = {
   conference_followup: 'Conference Follow-up',
 }
 
+const POLL_INTERVAL_MS = 15_000
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function CampaignDashboardPage() {
@@ -62,18 +64,29 @@ export default function CampaignDashboardPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [error,      setError]      = useState<string | null>(null)
 
-  const load = useCallback(() => {
-    fetch(`/api/campaigns/${id}`)
+  // Silent refresh — does not show loading state on subsequent fetches
+  const refresh = useCallback((silent = false) => {
+    if (!silent) setIsLoading(true)
+    return fetch(`/api/campaigns/${id}`)
       .then((r) => r.json() as Promise<{ data?: Campaign; error?: string }>)
       .then(({ data, error }) => {
         if (error || !data) { setError(error ?? 'Campaign not found'); return }
         setCampaign(data)
       })
-      .catch(() => setError('Failed to load campaign'))
-      .finally(() => setIsLoading(false))
+      .catch(() => { if (!silent) setError('Failed to load campaign') })
+      .finally(() => { if (!silent) setIsLoading(false) })
   }, [id])
 
-  useEffect(() => { load() }, [load])
+  // Initial load
+  useEffect(() => { refresh() }, [refresh])
+
+  // Auto-poll every 15 s while the campaign is active
+  const campaignStatus = campaign?.status
+  useEffect(() => {
+    if (campaignStatus !== 'active') return
+    const timer = setInterval(() => refresh(true), POLL_INTERVAL_MS)
+    return () => clearInterval(timer)
+  }, [campaignStatus, refresh])
 
   async function handleDelete() {
     if (!confirm(`Delete "${campaign?.name}"? This cannot be undone.`)) return
@@ -83,8 +96,9 @@ export default function CampaignDashboardPage() {
     else { setIsDeleting(false); setError('Delete failed. Please try again.') }
   }
 
-  // Called by EnrollmentTable when user marks a status change
+  // Called by EnrollmentTable when user manually marks a status change
   function handleStatusChange(enrollmentId: string, newStatus: string) {
+    // Optimistic update for the enrollment row
     setCampaign((prev) => {
       if (!prev) return prev
       return {
@@ -94,11 +108,8 @@ export default function CampaignDashboardPage() {
         ),
       }
     })
-    // Reload analytics (counts changed)
-    fetch(`/api/campaigns/${id}`)
-      .then((r) => r.json() as Promise<{ data?: Campaign }>)
-      .then(({ data }) => { if (data) setCampaign(data) })
-      .catch(() => {/* soft fail */})
+    // Re-fetch to get updated analytics counts
+    refresh(true)
   }
 
   if (isLoading) return <LoadingSkeleton />
@@ -175,26 +186,35 @@ export default function CampaignDashboardPage() {
         )}
 
         {/* ── Metrics ──────────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
-          <div className="col-span-2 sm:col-span-1 xl:col-span-2">
-            <MetricCard label="Enrolled"     value={enrolled}                icon={Users}          trend={`${campaign.enrollments.length} physician${enrolled !== 1 ? 's' : ''}`} />
-          </div>
-          <div className="col-span-2 sm:col-span-1 xl:col-span-2">
-            <MetricCard label="Sent"         value={analytics.messagesSent}  icon={Mail} />
-          </div>
-          <div className="col-span-2 sm:col-span-1 xl:col-span-2">
-            <MetricCard label="Delivered"    value={analytics.delivered}     icon={SendHorizonal} />
-          </div>
-          <div className="xl:col-span-2">
-            <MetricCard label="Open Rate"    value={`${analytics.openRate}%`} icon={Eye}           trend={analytics.opened > 0 ? `${analytics.opened} unique opens` : 'No opens yet'} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <MetricCard label="Replies"        value={analytics.replied}        icon={MessageSquare} trend={analytics.replyRate > 0 ? `${analytics.replyRate}% reply rate` : undefined} />
-          <MetricCard label="Meetings"       value={analytics.meetingsBooked} icon={CalendarCheck}  trend={analytics.meetingsBooked > 0 ? 'booked via dashboard' : 'None yet'} />
-          <MetricCard label="Bounced"        value={analytics.bounced}        icon={TrendingDown}   trend={analytics.bounceRate > 0 ? `${analytics.bounceRate}% bounce rate` : undefined} />
-          <MetricCard label="Reply Rate"     value={`${analytics.replyRate}%`} icon={MessageSquare} />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          <MetricCard
+            label="Enrolled"
+            value={enrolled}
+            icon={Users}
+            trend={`${enrolled} physician${enrolled !== 1 ? 's' : ''}`}
+          />
+          <MetricCard
+            label="Sent"
+            value={analytics.messagesSent}
+            icon={Mail}
+          />
+          <MetricCard
+            label="Open Rate"
+            value={`${analytics.openRate}%`}
+            icon={Eye}
+            trend={analytics.opened > 0 ? `${analytics.opened} unique opens` : 'No opens yet'}
+          />
+          <MetricCard
+            label="Replies"
+            value={analytics.replied}
+            icon={MessageSquare}
+          />
+          <MetricCard
+            label="Meetings"
+            value={analytics.meetingsBooked}
+            icon={CalendarCheck}
+            trend={analytics.meetingsBooked > 0 ? 'booked via dashboard' : 'None yet'}
+          />
         </div>
 
         {/* ── Chart ────────────────────────────────────────────────────────── */}
@@ -226,8 +246,8 @@ function LoadingSkeleton() {
         <Skeleton className="h-7 w-72" />
         <Skeleton className="h-4 w-48" />
       </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-lg" />)}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-lg" />)}
       </div>
       <Skeleton className="h-56 rounded-lg" />
       <Skeleton className="h-64 rounded-lg" />
