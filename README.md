@@ -130,7 +130,7 @@ Per-campaign analytics showing messages sent, delivered, open rate, replies, mee
    npm run dev
    ```
 
-   The app is available at `http://localhost:3000`. Register an account to get started.
+   The app is available at `https://docnexus-outreach.vercel.app`. Register an account to get started.
 
 ---
 
@@ -144,7 +144,7 @@ Per-campaign analytics showing messages sent, delivered, open rate, replies, mee
 | `OPENROUTER_API_KEY` | Yes | API key for OpenRouter — used by the AI email generation endpoint |
 | `RESEND_API_KEY` | No | Resend API key. If omitted, the app runs in simulation mode (emails logged to console) |
 | `RESEND_FROM_EMAIL` | No | Verified sender address in your Resend dashboard (e.g. `outreach@yourdomain.com`) |
-| `APP_BASE_URL` | No | Public URL of the deployment — embedded in email tracking pixel URLs. Defaults to `http://localhost:3000` |
+| `APP_BASE_URL` | No | Public URL of the deployment — embedded in email tracking pixel URLs. |
 
 ---
 
