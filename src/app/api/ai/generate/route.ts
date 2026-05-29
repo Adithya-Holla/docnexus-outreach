@@ -4,6 +4,11 @@ import { z } from 'zod'
 export const maxDuration = 30
 
 const GenerateRequestSchema = z.object({
+  sender: z.object({
+    name:    z.string().min(1),
+    title:   z.string().min(1),
+    company: z.string().min(1),
+  }),
   physician: z.object({
     id:                  z.string(),
     firstName:           z.string(),
@@ -56,6 +61,7 @@ Your response must be a raw JSON object with exactly two string fields: subject 
 
 function buildUserPrompt(
   physician: z.infer<typeof GenerateRequestSchema>['physician'],
+  sender:    z.infer<typeof GenerateRequestSchema>['sender'],
   campaignType: string,
   stepNumber: number,
 ): string {
@@ -64,13 +70,24 @@ function buildUserPrompt(
 
   return `Write a ${step} email template for a ${campaignType.replace(/_/g, ' ')} campaign targeting physicians.
 
-Use this physician as context to shape the topic and tone, but write the email using placeholders — NOT the actual values:
-- Specialty context: ${spec}
-- Affiliation context: ${physician.affiliation}
-- Location context: ${physician.city}, ${physician.state}
-- Step: ${step}
+RECIPIENT CONTEXT (use placeholders, NOT these literal values):
+- Specialty: ${spec}
+- Affiliation: ${physician.affiliation}
+- Location: ${physician.city}, ${physician.state}
 
-Every reference to a name, specialty, institution, or location MUST use a {{placeholder}}. The output will be sent to many physicians, so no real data should appear in the template.`
+SENDER (use these EXACT literal values in the signature — no placeholders):
+- Name: ${sender.name}
+- Title: ${sender.title}
+- Company: ${sender.company}
+
+Rules:
+- Every reference to the RECIPIENT (name, specialty, institution, location) MUST use a {{placeholder}}.
+- The signature must contain the sender's real name, title, and company — never placeholders.
+- Correct signature example:
+  Best regards,
+  ${sender.name}
+  ${sender.title}
+  ${sender.company}`
 }
 
 export async function POST(request: NextRequest) {
@@ -89,7 +106,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const { physician, campaignType, stepNumber } = parsed.data
+  const { physician, sender, campaignType, stepNumber } = parsed.data
 
   const controller = new AbortController()
   const timeout    = setTimeout(() => controller.abort(), 28_000)
@@ -108,7 +125,7 @@ export async function POST(request: NextRequest) {
         tool_choice: 'none',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user',   content: buildUserPrompt(physician, campaignType, stepNumber) },
+          { role: 'user',   content: buildUserPrompt(physician, sender, campaignType, stepNumber) },
         ],
       }),
       signal: controller.signal,

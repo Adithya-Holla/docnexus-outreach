@@ -25,9 +25,10 @@ interface Props {
   canRemove:    boolean
   physician:    Physician | null
   campaignType: string
+  sender:       { name: string; title: string; company: string }
 }
 
-export function SequenceStep({ index, control, onRemove, canRemove, physician, campaignType }: Props) {
+export function SequenceStep({ index, control, onRemove, canRemove, physician, campaignType, sender }: Props) {
   const lastFocus   = useRef<'subject' | 'body'>('body')
   const subjectRef  = useRef<HTMLInputElement | null>(null)
   const bodyRef     = useRef<HTMLTextAreaElement | null>(null)
@@ -197,6 +198,7 @@ export function SequenceStep({ index, control, onRemove, canRemove, physician, c
               physician={physician}
               campaignType={campaignType}
               stepNumber={index + 1}
+              sender={sender}
               onGenerated={(subject, body) => {
                 subjectField.onChange(subject)
                 bodyField.onChange(body)

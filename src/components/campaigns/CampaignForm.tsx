@@ -163,6 +163,7 @@ export function CampaignForm({ physicianIds, user }: Props) {
                   canRemove={fields.length > 1}
                   physician={previewPhysicians[previewIdx] ?? null}
                   campaignType={campaignType}
+                  sender={{ name: `${user.firstName} ${user.lastName}`, title: user.title, company: user.company }}
                 />
               ))}
 

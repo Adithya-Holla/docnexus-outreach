@@ -8,10 +8,11 @@ interface Props {
   physician:    Physician | null
   campaignType: string
   stepNumber:   number
+  sender:       { name: string; title: string; company: string }
   onGenerated:  (subject: string, body: string) => void
 }
 
-export function GenerateButton({ physician, campaignType, stepNumber, onGenerated }: Props) {
+export function GenerateButton({ physician, campaignType, stepNumber, sender, onGenerated }: Props) {
   const [isLoading, setIsLoading] = useState(false)
   const [toastMsg,  setToastMsg]  = useState<string | null>(null)
 
@@ -33,7 +34,7 @@ export function GenerateButton({ physician, campaignType, stepNumber, onGenerate
       const res  = await fetch('/api/ai/generate', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ physician, campaignType, stepNumber }),
+        body:    JSON.stringify({ physician, campaignType, stepNumber, sender }),
       })
       const json = await res.json() as { subject?: string; body?: string; error?: string }
 
