@@ -1,6 +1,8 @@
 import { type NextRequest } from 'next/server'
 import { z } from 'zod'
 
+export const maxDuration = 30
+
 const GenerateRequestSchema = z.object({
   physician: z.object({
     id:                  z.string(),
@@ -78,7 +80,7 @@ export async function POST(request: NextRequest) {
   const { physician, campaignType, stepNumber } = parsed.data
 
   const controller = new AbortController()
-  const timeout    = setTimeout(() => controller.abort(), 15_000)
+  const timeout    = setTimeout(() => controller.abort(), 28_000)
 
   try {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
