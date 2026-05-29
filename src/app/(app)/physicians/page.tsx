@@ -61,7 +61,7 @@ function PhysiciansContent() {
 
   return (
     <div className="flex h-full bg-white">
-      <FilterSidebar filters={filters} onFilterChange={updateFilter} onClearFilters={clearFilters} />
+      <FilterSidebar filters={filters} specialties={data?.specialties ?? []} onFilterChange={updateFilter} onClearFilters={clearFilters} />
       <div className="flex-1 min-w-0 overflow-y-auto p-6 pb-24">
         <div className="mb-5 flex items-baseline gap-2">
           {data ? (

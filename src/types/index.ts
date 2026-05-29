@@ -18,9 +18,10 @@ export interface Physician {
 }
 
 export interface PhysiciansResponse {
-  data:     Physician[]
-  total:    number
-  filtered: number
+  data:       Physician[]
+  total:      number
+  filtered:   number
+  specialties: string[]
 }
 
 export type FilterKey = 'specialty' | 'state' | 'affiliation' | 'yearFrom' | 'yearTo'

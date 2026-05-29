@@ -6,15 +6,6 @@ import { SlidersHorizontal, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { FilterState } from '@/types'
 
-const SPECIALTIES = [
-  'Oncology',
-  'Cardiology',
-  'Neurology',
-  'Rheumatology',
-  'Endocrinology',
-  'Gastroenterology',
-]
-
 const US_STATES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
   'HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
@@ -25,6 +16,7 @@ const US_STATES = [
 
 interface FilterSidebarProps {
   filters:        FilterState
+  specialties:    string[]
   onFilterChange: (key: keyof FilterState, value: string) => void
   onClearFilters: () => void
 }
@@ -37,7 +29,7 @@ const inputCls = [
   'disabled:cursor-not-allowed disabled:opacity-50',
 ].join(' ')
 
-export function FilterSidebar({ filters, onFilterChange, onClearFilters }: FilterSidebarProps) {
+export function FilterSidebar({ filters, specialties, onFilterChange, onClearFilters }: FilterSidebarProps) {
   // Text inputs commit to URL on blur/Enter to avoid per-keystroke API calls
   const [localAffiliation, setLocalAffiliation] = useState(filters.affiliation)
   const [localYearFrom,    setLocalYearFrom]    = useState(filters.yearFrom)
@@ -89,7 +81,7 @@ export function FilterSidebar({ filters, onFilterChange, onClearFilters }: Filte
             className={inputCls}
           >
             <option value="">All Specialties</option>
-            {SPECIALTIES.map((s) => (
+            {specialties.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>

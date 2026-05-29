@@ -78,14 +78,21 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Run all three queries in a single transaction for a consistent snapshot
-    const [data, filtered, total] = await prisma.$transaction([
+    // Run all queries in a single transaction for a consistent snapshot
+    const [data, filtered, total, specialtyRows] = await prisma.$transaction([
       prisma.physician.findMany({ where, orderBy: { lastName: 'asc' } }),
       prisma.physician.count({ where }),
-      prisma.physician.count(),          // unfiltered — always the full DB count
+      prisma.physician.count(),
+      prisma.physician.findMany({
+        select:   { specialty: true },
+        distinct: ['specialty'],
+        orderBy:  { specialty: 'asc' },
+      }),
     ])
 
-    return Response.json({ data, total, filtered })
+    const specialties = specialtyRows.map((r) => r.specialty)
+
+    return Response.json({ data, total, filtered, specialties })
   } catch (err) {
     console.error('[GET /api/physicians]', err)
     return Response.json(
