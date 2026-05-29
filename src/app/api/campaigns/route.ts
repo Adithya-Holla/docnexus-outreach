@@ -1,5 +1,7 @@
 import { type NextRequest } from 'next/server'
+import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
+import { getSession, COOKIE_NAME } from '@/lib/auth'
 import { CreateCampaignSchema } from '@/lib/validations'
 
 export async function GET() {
@@ -35,12 +37,17 @@ export async function POST(request: NextRequest) {
 
   const { name, type, sequences } = parsed.data
 
+  // Attach campaign to the logged-in user (best-effort — middleware guarantees a session exists)
+  const token  = cookies().get(COOKIE_NAME)?.value
+  const user   = token ? await getSession(token) : null
+
   try {
     const campaign = await prisma.$transaction(async (tx) => {
       return tx.campaign.create({
         data: {
           name,
           type,
+          userId: user?.id ?? null,
           sequences: {
             create: sequences.map((s) => ({
               stepNumber:      s.stepNumber,

@@ -66,6 +66,8 @@ model Campaign {
   type      String
   /// draft | active | completed
   status    String   @default("draft")
+  /// User who created this campaign — null for campaigns created before auth was added
+  userId    String?
   createdAt DateTime @default(now())
   /// Auto-managed by Prisma — useful for "last updated" display in the dashboard
   updatedAt DateTime @updatedAt
