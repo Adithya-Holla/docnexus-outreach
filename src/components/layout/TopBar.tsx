@@ -43,10 +43,6 @@ export function TopBar({ onMenuClick, user }: TopBarProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        <span className="hidden rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 sm:inline-flex">
-          Simulation Mode — Not for HCP Communication
-        </span>
-
         {/* User identity */}
         <div className="flex items-center gap-2.5">
           <div className="hidden text-right sm:block">

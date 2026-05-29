@@ -31,16 +31,18 @@ const TYPE_OPTIONS = [
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface Props {
-  physicianIds: string[]
-  user:         SessionUser
+  physicianIds:  string[]
+  user:          SessionUser
+  campaignId?:   string
+  initialValues?: CampaignFormValues
 }
 
-export function CampaignForm({ physicianIds, user }: Props) {
+export function CampaignForm({ physicianIds, user, campaignId, initialValues }: Props) {
   const router  = useRouter()
   const [step, setStep]                         = useState<1 | 2 | 3>(1)
   const [previewPhysicians, setPreviewPhysicians] = useState<Physician[]>([])
   const [previewIdx, setPreviewIdx]               = useState(0)
-  const { saveDraft, launchCampaign, isLoading, error } = useCampaign()
+  const { saveDraft, launchCampaign, updateDraft, updateAndLaunch, isLoading, error } = useCampaign()
 
   // Fetch ALL selected physicians for the preview carousel — no dedicated endpoint, filter client-side
   useEffect(() => {
@@ -57,17 +59,19 @@ export function CampaignForm({ physicianIds, user }: Props) {
       .catch(() => {/* preview degrades gracefully */})
   }, [physicianIds])
 
+  const formDefaults: CampaignFormValues = initialValues ?? {
+    name:      '',
+    type:      'cold_outbound',
+    sequences: [
+      { stepNumber: 1, delayDays: 0, subjectTemplate: '', bodyTemplate: '' },
+      { stepNumber: 2, delayDays: 7, subjectTemplate: '', bodyTemplate: '' },
+    ],
+  }
+
   const form = useForm<CampaignFormValues>({
     resolver:      zodResolver(CreateCampaignSchema),
     mode:          'onBlur',
-    defaultValues: {
-      name: '',
-      type: 'cold_outbound',
-      sequences: [
-        { stepNumber: 1, delayDays: 0, subjectTemplate: '', bodyTemplate: '' },
-        { stepNumber: 2, delayDays: 7, subjectTemplate: '', bodyTemplate: '' },
-      ],
-    },
+    defaultValues: formDefaults,
   })
 
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'sequences' })
@@ -113,10 +117,13 @@ export function CampaignForm({ physicianIds, user }: Props) {
       })
       return
     }
-    const c = await saveDraft(form.getValues())
+    const values = form.getValues()
+    const c = campaignId
+      ? await updateDraft(campaignId, values)
+      : await saveDraft(values)
     if (c) {
       toast({ title: 'Campaign saved', description: 'Your draft has been saved.' })
-      router.push('/campaigns')
+      router.push(campaignId ? `/campaigns/${campaignId}` : '/campaigns')
     }
   }
 
@@ -130,7 +137,10 @@ export function CampaignForm({ physicianIds, user }: Props) {
       })
       return
     }
-    const c = await launchCampaign(form.getValues(), physicianIds)
+    const values = form.getValues()
+    const c = campaignId
+      ? await updateAndLaunch(campaignId, values, physicianIds)
+      : await launchCampaign(values, physicianIds)
     if (c) {
       toast({
         title:       'Campaign launched',

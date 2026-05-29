@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import {
-  Users, Mail, SendHorizonal, Eye, MessageSquare, CalendarCheck, Trash2, TrendingDown,
+  Users, Mail, SendHorizonal, Eye, MessageSquare, CalendarCheck, Trash2, TrendingDown, Pencil, UserSearch,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -127,15 +128,35 @@ export default function CampaignDashboardPage() {
             )}>
               {campaign.status}
             </span>
-            <button
-              onClick={handleDelete}
-              disabled={isDeleting}
-              title="Delete campaign"
-              className="ml-auto flex items-center gap-1.5 rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              {isDeleting ? 'Deleting…' : 'Delete'}
-            </button>
+            <div className="ml-auto flex items-center gap-2">
+              {campaign.status === 'draft' && (
+                <>
+                  <Link
+                    href={`/campaigns/${id}/edit`}
+                    className="flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit Campaign
+                  </Link>
+                  <Link
+                    href={`/physicians?campaign=${id}`}
+                    className="flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100"
+                  >
+                    <UserSearch className="h-3.5 w-3.5" />
+                    Select Physicians &amp; Launch
+                  </Link>
+                </>
+              )}
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                title="Delete campaign"
+                className="flex items-center gap-1.5 rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {isDeleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
           </div>
           <p className="text-sm text-slate-400">
             {TYPE_LABELS[campaign.type] ?? campaign.type}
@@ -170,9 +191,9 @@ export default function CampaignDashboardPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <MetricCard label="Replies"        value={analytics.replied}       icon={MessageSquare}  trend={`${analytics.replyRate}% reply rate`} />
+          <MetricCard label="Replies"        value={analytics.replied}        icon={MessageSquare} trend={analytics.replyRate > 0 ? `${analytics.replyRate}% reply rate` : undefined} />
           <MetricCard label="Meetings"       value={analytics.meetingsBooked} icon={CalendarCheck}  trend={analytics.meetingsBooked > 0 ? 'booked via dashboard' : 'None yet'} />
-          <MetricCard label="Bounced"        value={analytics.bounced}       icon={TrendingDown}   trend={`${analytics.bounceRate}% bounce rate`} />
+          <MetricCard label="Bounced"        value={analytics.bounced}        icon={TrendingDown}   trend={analytics.bounceRate > 0 ? `${analytics.bounceRate}% bounce rate` : undefined} />
           <MetricCard label="Reply Rate"     value={`${analytics.replyRate}%`} icon={MessageSquare} />
         </div>
 

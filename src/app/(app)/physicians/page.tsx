@@ -39,10 +39,17 @@ function PhysiciansContent() {
     })
   }, [])
 
+  // If ?campaign=<id> is in the URL we're selecting physicians for an existing draft
+  const existingCampaignId = searchParams.get('campaign')
+
   const handleSaveToCampaign = useCallback(() => {
     const ids = Array.from(selectedIds).join(',')
-    router.push(`/campaigns/new?ids=${ids}`)
-  }, [selectedIds, router])
+    if (existingCampaignId) {
+      router.push(`/campaigns/${existingCampaignId}/edit?ids=${ids}`)
+    } else {
+      router.push(`/campaigns/new?ids=${ids}`)
+    }
+  }, [selectedIds, router, existingCampaignId])
 
   const filters: FilterState = {
     specialty:   searchParams.get('specialty')   ?? '',
@@ -53,7 +60,7 @@ function PhysiciansContent() {
   }
 
   return (
-    <div className="flex min-h-full bg-white">
+    <div className="flex h-full bg-white">
       <FilterSidebar filters={filters} onFilterChange={updateFilter} onClearFilters={clearFilters} />
       <div className="flex-1 min-w-0 overflow-y-auto p-6 pb-24">
         <div className="mb-5 flex items-baseline gap-2">
