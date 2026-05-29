@@ -2,10 +2,12 @@
 
 import { useRef } from 'react'
 import { useController, useFormState, type Control } from 'react-hook-form'
-import { Trash2, Sparkles } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { TEMPLATE_VARIABLES } from '@/lib/templateEngine'
 import type { CampaignFormValues } from '@/lib/validations'
+import type { Physician } from '@/types'
+import { GenerateButton } from './GenerateButton'
 
 const inputCls =
   'w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ' +
@@ -14,17 +16,18 @@ const inputCls =
 
 const errCls = 'border-red-400 focus:border-red-400 focus:ring-red-200'
 
-// All supported tokens — shown so users never have to guess the exact variable name
 const CHIPS = TEMPLATE_VARIABLES
 
 interface Props {
-  index:     number
-  control:   Control<CampaignFormValues>
-  onRemove:  () => void
-  canRemove: boolean
+  index:        number
+  control:      Control<CampaignFormValues>
+  onRemove:     () => void
+  canRemove:    boolean
+  physician:    Physician | null
+  campaignType: string
 }
 
-export function SequenceStep({ index, control, onRemove, canRemove }: Props) {
+export function SequenceStep({ index, control, onRemove, canRemove, physician, campaignType }: Props) {
   const lastFocus   = useRef<'subject' | 'body'>('body')
   const subjectRef  = useRef<HTMLInputElement | null>(null)
   const bodyRef     = useRef<HTMLTextAreaElement | null>(null)
@@ -189,15 +192,17 @@ export function SequenceStep({ index, control, onRemove, canRemove }: Props) {
               {v.key}
             </button>
           ))}
-          <button
-            type="button"
-            disabled
-            title="AI generation coming soon"
-            className="ml-auto flex cursor-not-allowed items-center gap-1 rounded border border-slate-200 px-2.5 py-1 text-[11px] text-slate-400 opacity-60"
-          >
-            <Sparkles className="h-3 w-3" />
-            Generate with AI
-          </button>
+          <div className="ml-auto">
+            <GenerateButton
+              physician={physician}
+              campaignType={campaignType}
+              stepNumber={index + 1}
+              onGenerated={(subject, body) => {
+                subjectField.onChange(subject)
+                bodyField.onChange(body)
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>

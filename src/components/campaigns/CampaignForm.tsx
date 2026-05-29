@@ -69,8 +69,9 @@ export function CampaignForm({ physicianIds }: Props) {
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'sequences' })
   const { errors }                  = form.formState
 
-  // Watch entire sequences array so the preview panel updates as the user types
-  const sequences = form.watch('sequences')
+  // Watch entire sequences array and type so the preview panel and AI button stay in sync
+  const sequences    = form.watch('sequences')
+  const campaignType = form.watch('type')
 
   // After a deletion, re-number stepNumbers so they stay sequential.
   // Values are preserved by useFieldArray.remove(); only the metadata needs fixing.
@@ -158,6 +159,8 @@ export function CampaignForm({ physicianIds }: Props) {
                   control={form.control}
                   onRemove={() => remove(idx)}
                   canRemove={fields.length > 1}
+                  physician={previewPhysicians[previewIdx] ?? null}
+                  campaignType={campaignType}
                 />
               ))}
 
