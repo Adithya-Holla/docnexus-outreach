@@ -93,7 +93,9 @@ export async function getCampaignMetrics(campaignId: string): Promise<CampaignMe
     buildChartData(campaignId),
   ])
 
-  const base      = delivered > 0 ? delivered : 0
+  // Use delivered as the base; fall back to messagesSent when delivery
+  // webhook events haven't arrived yet (e.g. webhooks not configured).
+  const base      = delivered > 0 ? delivered : messagesSent
   const openRate  = base > 0 ? Math.round((opened  / base) * 1000) / 10 : 0
   const replyRate = base > 0 ? Math.round((replied / base) * 1000) / 10 : 0
   const bounceRate = messagesSent > 0 ? Math.round((bounced / messagesSent) * 1000) / 10 : 0
