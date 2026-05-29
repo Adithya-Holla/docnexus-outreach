@@ -6,6 +6,8 @@ import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, Plus, Rocket, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { CreateCampaignSchema, type CampaignFormValues } from '@/lib/validations'
 import { useCampaign } from '@/hooks/useCampaign'
@@ -91,21 +93,51 @@ export function CampaignForm({ physicianIds, user }: Props) {
     const ok = step === 1
       ? await form.trigger(['name', 'type'])
       : await form.trigger('sequences')
+    if (!ok) {
+      toast({
+        title:       'Fix validation errors',
+        description: 'Please complete all required fields before continuing.',
+        variant:     'destructive',
+      })
+    }
     if (ok) setStep((s) => (s + 1) as typeof step)
   }
 
   async function handleSaveDraft() {
     const ok = await form.trigger()
-    if (!ok) return
+    if (!ok) {
+      toast({
+        title:       'Fix validation errors',
+        description: 'Please complete all required fields before saving.',
+        variant:     'destructive',
+      })
+      return
+    }
     const c = await saveDraft(form.getValues())
-    if (c) router.push('/campaigns')
+    if (c) {
+      toast({ title: 'Campaign saved', description: 'Your draft has been saved.' })
+      router.push('/campaigns')
+    }
   }
 
   async function handleLaunch() {
     const ok = await form.trigger()
-    if (!ok) return
+    if (!ok) {
+      toast({
+        title:       'Fix validation errors',
+        description: 'Please complete all required fields before launching.',
+        variant:     'destructive',
+      })
+      return
+    }
     const c = await launchCampaign(form.getValues(), physicianIds)
-    if (c) router.push('/campaigns')
+    if (c) {
+      toast({
+        title:       'Campaign launched',
+        description: 'Emails are being sent to enrolled physicians.',
+      })
+      router.push('/campaigns')
+    }
   }
 
   return (
@@ -215,15 +247,29 @@ export function CampaignForm({ physicianIds, user }: Props) {
                   <Save className="h-4 w-4" />
                   Save as Draft
                 </Button>
-                <Button
-                  type="button"
-                  className="flex-1 gap-2 bg-blue-600 hover:bg-blue-700"
-                  disabled={isLoading || physicianIds.length === 0}
-                  onClick={handleLaunch}
-                >
-                  <Rocket className="h-4 w-4" />
-                  {isLoading ? 'Launching…' : 'Launch Campaign'}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    {/* span so the tooltip can attach to a disabled button */}
+                    <span className="flex-1">
+                      <Button
+                        type="button"
+                        className="w-full gap-2 bg-blue-600 hover:bg-blue-700"
+                        disabled={isLoading || physicianIds.length === 0 || fields.length === 0}
+                        onClick={handleLaunch}
+                      >
+                        <Rocket className="h-4 w-4" />
+                        {isLoading ? 'Launching…' : 'Launch Campaign'}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {(physicianIds.length === 0 || fields.length === 0) && (
+                    <TooltipContent side="top">
+                      {fields.length === 0
+                        ? 'Add at least one email step'
+                        : 'Select at least one physician'}
+                    </TooltipContent>
+                  )}
+                </Tooltip>
               </div>
 
               {physicianIds.length === 0 && (

@@ -40,6 +40,7 @@ interface PhysicianGridProps {
   isLoading:         boolean
   isError:           boolean
   onRetry:           () => void
+  onClearFilters:    () => void
   selectedIds:       Set<string>
   onToggleSelection: (id: string) => void
 }
@@ -49,6 +50,7 @@ export function PhysicianGrid({
   isLoading,
   isError,
   onRetry,
+  onClearFilters,
   selectedIds,
   onToggleSelection,
 }: PhysicianGridProps) {
@@ -87,9 +89,12 @@ export function PhysicianGrid({
         <p className="font-semibold text-slate-600 mb-1">
           No physicians match your filters
         </p>
-        <p className="text-sm text-slate-400">
-          Try adjusting or clearing your filters to broaden the search.
+        <p className="text-sm text-slate-400 mb-5">
+          Try adjusting your filters or clear them to see all physicians.
         </p>
+        <Button variant="outline" size="sm" onClick={onClearFilters}>
+          Clear filters
+        </Button>
       </div>
     )
   }

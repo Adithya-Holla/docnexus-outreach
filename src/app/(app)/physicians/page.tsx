@@ -77,6 +77,7 @@ function PhysiciansContent() {
           isLoading={isLoading}
           isError={isError}
           onRetry={refetch}
+          onClearFilters={clearFilters}
           selectedIds={selectedIds}
           onToggleSelection={toggleSelection}
         />

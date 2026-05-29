@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import type { SessionUser } from '@/lib/auth'
 
 interface Props {
@@ -14,14 +16,18 @@ export function LayoutShell({ children, user }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <TopBar onMenuClick={() => setSidebarOpen(true)} user={user} />
-        <main className="flex-1 overflow-hidden bg-slate-50">
-          {children}
-        </main>
+    <TooltipProvider delayDuration={300}>
+      <div className="flex h-screen overflow-hidden bg-white">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <TopBar onMenuClick={() => setSidebarOpen(true)} user={user} />
+          <main className="flex-1 overflow-hidden bg-slate-50">
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+          </main>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   )
 }

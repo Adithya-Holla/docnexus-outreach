@@ -3,26 +3,26 @@
 
 import { Users, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 interface SelectionBarProps {
   selectedCount:    number
   onSaveToCampaign: () => void
 }
 
-/**
- * Fixed bottom bar that slides up when at least one physician is selected.
- * Offset by sidebar width (md:left-60) so it doesn't overlap the nav sidebar.
- */
 export function SelectionBar({ selectedCount, onSaveToCampaign }: SelectionBarProps) {
-  const visible = selectedCount > 0
+  const visible   = selectedCount > 0
+  const isDisabled = selectedCount === 0
 
   return (
     <div
       aria-live="polite"
       className={cn(
-        // Layout: fixed, account for the 240px app sidebar on desktop
         'fixed bottom-0 left-0 right-0 z-40 md:left-60',
-        // Slide + fade animation
         'transition-all duration-300 ease-in-out',
         visible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none',
       )}
@@ -43,13 +43,27 @@ export function SelectionBar({ selectedCount, onSaveToCampaign }: SelectionBarPr
           </div>
 
           {/* Right: CTA */}
-          <button
-            onClick={onSaveToCampaign}
-            className="flex items-center gap-2 rounded-md bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 active:bg-blue-800"
-          >
-            Save &amp; Add to Campaign
-            <ArrowRight className="h-4 w-4" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onSaveToCampaign}
+                disabled={isDisabled}
+                className={cn(
+                  'flex items-center gap-2 rounded-md bg-blue-600 px-5 py-2 text-sm font-semibold text-white',
+                  'transition-colors hover:bg-blue-700 active:bg-blue-800',
+                  'disabled:cursor-not-allowed disabled:opacity-50',
+                )}
+              >
+                Save &amp; Add to Campaign
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            {isDisabled && (
+              <TooltipContent side="top">
+                Select at least one physician
+              </TooltipContent>
+            )}
+          </Tooltip>
         </div>
       </div>
     </div>
