@@ -238,4 +238,4 @@ Per-campaign analytics showing number of physicians enrolled, messages sent, ope
 
 ## Video Demo
 
-[Loom walkthrough — link coming]
+https://drive.google.com/file/d/1xSkNNAfxmuZ8zDIi4IJfr-IRH-YEjnSX/view?usp=sharing
