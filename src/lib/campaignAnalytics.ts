@@ -40,8 +40,8 @@ async function countUniqueEnrollments(campaignId: string, eventType: string): Pr
   return rows.length
 }
 
-/** Build a 7-day chart array with zero-fill for missing days. */
-async function buildChartData(campaignId: string): Promise<ChartDay[]> {
+/** Build a 7-day chart array with zero-fill for missing days, across all campaigns. */
+async function buildChartData(): Promise<ChartDay[]> {
   const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   // Build the 7-day window in JavaScript to avoid raw SQLite date quirks
@@ -54,9 +54,9 @@ async function buildChartData(campaignId: string): Promise<ChartDay[]> {
 
   const windowStart = new Date(days[0].iso + 'T00:00:00.000Z')
 
-  // Fetch all dispatches within the window using Prisma's typed API
+  // Fetch all dispatches within the window across all campaigns
   const dispatches = await prisma.emailDispatch.findMany({
-    where:  { campaignId, sentAt: { gte: windowStart } },
+    where:  { sentAt: { gte: windowStart } },
     select: { sentAt: true },
   })
 
@@ -90,7 +90,7 @@ export async function getCampaignMetrics(campaignId: string): Promise<CampaignMe
     countUniqueEnrollments(campaignId, 'REPLIED'),
     countUniqueDispatches(campaignId, 'BOUNCED'),
     countUniqueEnrollments(campaignId, 'MEETING_BOOKED'),
-    buildChartData(campaignId),
+    buildChartData(),
   ])
 
   // Use delivered as the base; fall back to messagesSent when delivery
